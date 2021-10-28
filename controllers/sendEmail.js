@@ -1,5 +1,8 @@
+require('dotenv').config();
 const nodeMailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
+const sgTransport = require('nodemailer-sendgrid-transport');
+let SibApiV3Sdk = require('sib-api-v3-sdk');
 
 const sendingEmail = async (req, res) => {
   const testAccount = await nodeMailer.createTestAccount();
@@ -35,13 +38,56 @@ const sendGridEmail = async (req, res) => {
     text: 'sending mail from nodejs with sendGrid dependency',
     html: '<h2>and easy to do anywhere, this is awesome </h2>',
   };
-  try{
+  try {
     const information = await sgMail.send(msg);
-    res.json(information)
-  }catch (error) {
+    res.json(information);
+  } catch (error) {
     res.json(error);
   }
 
 };
 
-module.exports = sendGridEmail;
+const sendGridTransport = async (req, res) => {
+  const options = { auth: { api_key: process.env.SendEmail } };
+
+  const mailer = nodeMailer.createTransport(sgTransport(options));
+
+  const email = {
+    to: [ 'imkpk@live.com', 'prathibhakumar.kashapogu@gmail.com' ],
+    from: 'uidev.kumark@gmail.com',
+    subject: 'Hi there',
+    text: 'Awesome sauce',
+    html: '<b>Awesome sauce by Vasu </b>',
+  };
+  try {
+    const success = await mailer.sendMail(email);
+    res.status(201).json(success);
+  } catch (error) {
+    res.status(404).json(error);
+  }
+
+};
+
+const sendBlue = async (req, res) => {
+  SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = process.env.Blue_Mail;
+  const email = {
+    'subject': 'Hello from the Node SDK!',
+    'sender': { 'email': 'imkpk@lve.com', 'name': 'Pratibha' },
+    'replyTo': { 'email': 'uidev.kumark@gmail.com', 'name': 'Kumar K' },
+    'to': [
+      { 'name': 'Kumar', 'email': 'uidev.pratibha@gmail.com' },
+      { 'name': 'Vignesh', 'email': 'vvkumarpy@gmail.com' } ],
+    'htmlContent': '<html><body><h1>This is a transactional email {{params.bodyMessage}}</h1></body></html>',
+    'params': { 'bodyMessage': 'Made just for you! Vignesh' },
+  };
+  try {
+    const sendMail = await new SibApiV3Sdk.TransactionalEmailsApi().sendTransacEmail(
+      email);
+    res.status(201).json(sendMail);
+  } catch (error) {
+    res.status(500).json(error);
+
+  }
+};
+
+module.exports = sendBlue;
